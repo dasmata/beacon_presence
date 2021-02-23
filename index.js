@@ -4,7 +4,6 @@ const http = require('http');
 const subjects = require('./subjects.js');
 
 const scanner = new BeaconScanner({noble: noble});
-const ACCESS_TOKEN = "e79db7aa-dee0-4f97-b672-d6323e57e294";
 const COMMANDS_PRESENT = "arrived";
 const COMMANDS_DEPARTED = "departed";
 const PRESENCE_COUNT = 120;
