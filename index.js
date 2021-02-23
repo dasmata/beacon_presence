@@ -1,7 +1,6 @@
 const BeaconScanner = require('node-beacon-scanner');
 const noble = require('@abandonware/noble');
 const http = require('http');
-const subjects = require('./subjects.js');
 
 const scanner = new BeaconScanner({noble: noble});
 const COMMANDS_PRESENT = "arrived";
@@ -11,19 +10,14 @@ const defaults = {
   "count": PRESENCE_COUNT,
   "present": false,
 };
-const registeredBeacons = Object.keys(subjects).reduce((acc, subject) => {
-  acc[subject] = {
-    ...subjects[subject],
-    ...defaults
-  };
-  return acc;
-},{})
-const names = Object.keys(registeredBeacons);
 const options = {
   "host": "http://piemade.home:3300",
   "path": "/update"
 }
 
+
+let registeredBeacons = {};
+let names = [];
 function updatePresence(name, present){
   const path = `${options.path}?present=${present}&subject=${name}`;
   return new Promise((resolve, reject) => {
@@ -32,6 +26,11 @@ function updatePresence(name, present){
         restart();
         reject();
         return;
+      }
+      if(res.statusCode === 202){
+        console.log("state not updated");
+        reject();
+        return
       }
       resolve();
     });
@@ -46,7 +45,7 @@ scanner.onadvertisement = (ad) => {
       if(!registeredBeacons[name].presence){
         updatePresence(name, true).then(() => {
           registeredBeacons[name].presence = true;
-        }).catch(() => console.log("updatePresence call failed"));
+        }).catch(() => console.log("updatePresence call was rejected"));
       }
       registeredBeacons[name].count = 0;
     }
@@ -71,8 +70,14 @@ const register = () => {
 
     http.get(`${options.host}/register`, (res) => {
       if(res.statusCode === 200){
-        console.log("registered!");
-        resolve();
+        let data = '';
+        res.on("data", (chunk) => {
+          data += chunk.toString();
+        });
+        res.on("end", () => {
+          console.log("registered!");
+          resolve(JSON.parse(data));
+        });
         return;
       }
       console.log("failed! retry in 1s");
@@ -97,6 +102,17 @@ const startScan = () => {
   });
 };
 
+const registerBeacons = (subjects) => {
+  registeredBeacons = Object.keys(subjects).reduce((acc, subject) => {
+    acc[subject] = {
+      ...subjects[subject],
+      ...defaults
+    };
+    return acc;
+  },{})
+  names = Object.keys(registeredBeacons);
+}
+
 const stopScan = () => {
   return new Promise((resolve, reject) => {
     // Start scanning
@@ -107,7 +123,10 @@ const stopScan = () => {
 }
 
 const init = () => {
-  return register().then(() => startScan());
+  return register().then((subjects) => {
+    registerBeacons(subjects);
+    return startScan();
+  });
 };
 
 const restart = () => {

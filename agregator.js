@@ -22,16 +22,21 @@ const srv = http.createServer((req, res) => {
 
 function updatePresence(data){
   if(subjects[data.subject].present !== data.newState){
-    const path = `${config.path}/${subjects[data.subject].deviceId}/${data.newState ? COMMANDS_PRESENT : COMMANDS_DEPARTED}?access_token=${config.ACCESS_TOKEN}`;
-    subjects[data.subject].present = data.newState;
-    console.log(`Update presence for ${data.subject} to ${data.newState}`);
-    http.get(`${config.host}${path}`);
+    const newState = Object.keys(providers).reduce((acc, ip) => {
+      return acc || providers[ip].isPresent(data.subject);
+    }, false);
+    if(newState !== subjects[data.subject].present){
+      const path = `${config.path}/${subjects[data.subject].deviceId}/${newState ? COMMANDS_PRESENT : COMMANDS_DEPARTED}?access_token=${config.ACCESS_TOKEN}`;
+      subjects[data.subject].present = newState;
+      console.log(`Update presence for ${data.subject} to ${newState}`);
+      http.get(`${config.host}${path}`);
+    }
   }
 }
 
 
 const handler = {
-  register(req){
+  register(req, res){
     const ip = req.connection.remoteAddress;
     return new Promise((resolve, fail) => {
       if(providers[ip]){
@@ -39,7 +44,10 @@ const handler = {
       }
       providers[ip] = new PresenceProvider();
       providers[ip].addEventListener(PresenceProvider.EVT_UPDATE_PRESENCE, updatePresence);
+
       console.log(`Registered ${ip} as presence provider`);
+      res.setHeader("Content-Type", "application/json");
+      res.write(JSON.stringify(subjectsConfig));
       resolve();
     });
   },
@@ -59,9 +67,34 @@ const handler = {
       if(!query){
         reject(400);
       }
-      providers[ip].setPresence(query.subject, query.present);
-      resolve();
+      providers[ip].setPresence(query.subject, query.present).then((updated) => {
+        resolve(updated ? 200 : 202);
+      });
     });
+  },
+  status(res){
+    const result = Object.keys(subjects).reduce((acc, name) => {
+      acc[name] = {
+        present: subjects[name].present,
+        lastSeen: Object.keys(providers).reduce((acc, ip) => {
+          const lastSeen = providers[ip].lastSeen(name);
+          if(acc === null){
+            if(lastSeen === null){
+              return null;
+            }
+            return {
+              time: lastSeen,
+              provider: ip
+            }
+          }
+          return acc < lastSeen ? {time: lastSeen, provider: ip} : acc;
+        }, null)
+      }
+      return acc;
+    }, {});
+    res.setHeader("Content-Type", "application/json");
+    res.write(JSON.stringify(result));
+    return Promise.resolve(200);
   }
 }
 
@@ -74,7 +107,7 @@ class PresenceProvider {
   }
 
   setPresence(subject, newPresence){
-    const oldState = this.currentState[subject] || false;
+    const oldState = !!this.currentState[subject];
     this.log.push({
       time: new Date(),
       value: newPresence,
@@ -82,16 +115,31 @@ class PresenceProvider {
     });
     this.currentState[subject] = newPresence === "true";
     this.logRotate();
-    this.dispatchEvent(this.constructor.EVT_UPDATE_PRESENCE, {
-      provider: this,
-      subject: subject,
-      oldState: oldState,
-      newState: this.currentState[subject]
-    })
+    if(oldState !== this.currentState[subject]){
+      this.dispatchEvent(this.constructor.EVT_UPDATE_PRESENCE, {
+        provider: this,
+        subject: subject,
+        oldState: oldState,
+        newState: this.currentState[subject]
+      });
+      return Promise.resolve(true);
+    }
+    return Promise.resolve(false);
   }
 
   isPresent(subject){
-    return false;
+    return !!this.currentState[subject];
+  }
+
+  lastSeen(subject){
+    const tmp = [...this.log.reverse()];
+    const len = tmp.length;
+    for(let i = 0; i < len; i++){
+      if(tmp[i].subject === subject){
+        return tmp[i].time;
+      }
+    }
+    return null;
   }
 
   logRotate(){
@@ -131,16 +179,21 @@ srv.addListener("request", (req, res) => {
   let prm = null;
   switch(path[0]){
     case "/register":
-      prm = handler.register(req);
+      prm = handler.register(req, res);
       break;
     case "/update":
       prm = handler.update(req);
       break;
+    case "/status":
+      prm = handler.status(res);
+      break;
     default:
       prm = Promise.reject(404);
   }
-  prm.then(()=>{
-    res.writeHead(200);
+  prm.then((code)=>{
+    if(!res.headersSent){
+      res.writeHead(code ? code : 200);
+    }
     res.end();
   }).catch((code) => {
     console.log(code);
