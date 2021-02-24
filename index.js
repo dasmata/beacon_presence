@@ -68,7 +68,7 @@ const register = () => {
 
     http.get(`${options.host}/register`, {
       headers: {
-        authorization: `bearer ${Buffer.from("ble_provider:palarie692").toString('base64')}`
+        authorization: `bearer ${Buffer.from(options.credentials.join(":")).toString('base64')}`
       }
     }, (res) => {
       if(res.statusCode === 200){
