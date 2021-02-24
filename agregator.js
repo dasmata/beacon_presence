@@ -1,4 +1,6 @@
+const https = require("https");
 const http = require("http");
+const fs = require("fs");
 const dns = require("dns");
 const subjectsConfig = require("./subjects.js");
 const config = require("./config.js");
@@ -16,7 +18,12 @@ const subjects = Object.keys(subjectsConfig).reduce((acc, name) => {
   return acc;
 }, {});
 
-const srv = http.createServer((req, res) => {
+const srvOptions = {
+  key: fs.readFileSync("./certs/piemade.home.key"),
+  cert: fs.readFileSync("./certs/piemade.home.crt")
+}
+
+const srv = https.createServer(srvOptions, (req, res) => {
     res.setHeader("Content-Type", "application/json");
 });
 
@@ -37,8 +44,15 @@ function updatePresence(data){
 
 const handler = {
   register(req, res){
-    const ip = req.connection.remoteAddress;
-    return new Promise((resolve, fail) => {
+    const ip = req.connection.remoteAddress; 
+    return new Promise((resolve, reject) => {
+      const userpass = Buffer.from((req.headers.authorization || '').split(' ')[1] || '', 'base64').toString();
+      if (userpass !== config.credentials.join(":")) {
+        console.log("invalid registration");
+        reject(401);
+        return;
+      }
+
       if(providers[ip]){
         providers[ip].removeEventListeners();
       }

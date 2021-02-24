@@ -1,6 +1,7 @@
 const BeaconScanner = require('node-beacon-scanner');
 const noble = require('@abandonware/noble');
-const http = require('http');
+const http = require('https');
+const options = require("./client_config.js");
 
 const scanner = new BeaconScanner({noble: noble});
 const COMMANDS_PRESENT = "arrived";
@@ -10,16 +11,13 @@ const defaults = {
   "count": PRESENCE_COUNT,
   "present": false,
 };
-const options = {
-  "host": "http://piemade.home:3300",
-  "path": "/update"
-}
 
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 
 let registeredBeacons = {};
 let names = [];
 function updatePresence(name, present){
-  const path = `${options.path}?present=${present}&subject=${name}`;
+  const path = `/update?present=${present}&subject=${name}`;
   return new Promise((resolve, reject) => {
     http.get(`${options.host}${path}`, (res) => {
       if(res.statusCode === 401){
@@ -68,7 +66,11 @@ const register = () => {
   return new Promise((resolve, reject) => {
     console.log("registering to agregator");
 
-    http.get(`${options.host}/register`, (res) => {
+    http.get(`${options.host}/register`, {
+      headers: {
+        authorization: `bearer ${Buffer.from("ble_provider:palarie692").toString('base64')}`
+      }
+    }, (res) => {
       if(res.statusCode === 200){
         let data = '';
         res.on("data", (chunk) => {
@@ -80,10 +82,12 @@ const register = () => {
         });
         return;
       }
+      console.log(res);
       console.log("failed! retry in 1s");
       setTimeout(() => resolve(register()), 1000);
     }).on("error", (e) => {
       console.log("failed! retry in 1s");
+      console.log(e);
       setTimeout(() => resolve(register()), 1000);
     });
   })
