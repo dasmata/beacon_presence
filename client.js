@@ -1,7 +1,7 @@
 const BeaconScanner = require('node-beacon-scanner');
 const noble = require('@abandonware/noble');
 const http = require('https');
-const options = require("./client_config.js");
+const options = require("./config/client_config.js");
 
 const scanner = new BeaconScanner({noble: noble});
 const COMMANDS_PRESENT = "arrived";
@@ -114,6 +114,7 @@ const registerBeacons = (subjects) => {
     };
     return acc;
   },{})
+  console.log(registeredBeacons);
   names = Object.keys(registeredBeacons);
 }
 

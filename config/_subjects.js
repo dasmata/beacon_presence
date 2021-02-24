@@ -10,6 +10,10 @@ const subjects = {
   "home_control": {
     "uuid": "35A2F39E-6558-4363-9942-53ABC2112E7A",
     "deviceId": 307
+  },
+  "mamaica": {
+    "uuid": "4673BE02-069D-4558-B522-AE1912C3134D",
+    "deviceId": 308
   }
 }
 

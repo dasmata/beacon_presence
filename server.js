@@ -2,8 +2,8 @@ const https = require("https");
 const http = require("http");
 const fs = require("fs");
 const dns = require("dns");
-const subjectsConfig = require("./subjects.js");
-const config = require("./config.js");
+const subjectsConfig = require("./config/subjects.js");
+const config = require("./config/server_config.js");
 
 const providers = {};
 const LOG_SIZE = 30;
@@ -19,8 +19,8 @@ const subjects = Object.keys(subjectsConfig).reduce((acc, name) => {
 }, {});
 
 const srvOptions = {
-  key: fs.readFileSync("./certs/piemade.home.key"),
-  cert: fs.readFileSync("./certs/piemade.home.crt")
+  key: fs.readFileSync("./certs/keyFile.key"),
+  cert: fs.readFileSync("./certs/crtFile.crt")
 }
 
 const srv = https.createServer(srvOptions, (req, res) => {
