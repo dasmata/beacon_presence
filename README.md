@@ -131,3 +131,5 @@ Returns the data formatted as json o success or a 401 http status code (with emp
   }
 }
 ```
+## Security concerns
+This app is nor recommended for arming/disarming HSM or for locking/unlocking locks because it relies on BLE beacons. Any smart phone can simulate most types of BLE beacons and send any beacon UUID. Your beacon UUID is public. It is brodcasted unencrypted for everyone to use. Anyone has acces to it and can create his own beacon with the same UUID and thus impersonate you. Please use this app only for non critical and non security related use cases.
