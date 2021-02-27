@@ -49,27 +49,32 @@ function updatePresence(data){
 }
 
 
+const checkAuth = (auth, user, pass) => {
+  const userpass = Buffer.from((auth || '').split(' ')[1] || '', 'base64').toString();
+  if (userpass !== `${user}:${pass}`) {
+    utils.log("invalid registration: invlid cedentials");
+    return Promise.resolve(false);
+  }
+  return Promise.resolve(true)
+}
+
 const handler = {
   register(req, res){
     const ip = req.connection.remoteAddress; 
     return new Promise((resolve, reject) => {
-      const userpass = Buffer.from((req.headers.authorization || '').split(' ')[1] || '', 'base64').toString();
-      if (userpass !== config.credentials.join(":")) {
-        utils.log("invalid registration");
-        reject(401);
-        return;
-      }
+      checkAuth(req.headers.authorization, config.credentials[0], config.credentials[1]).then(() => {
+       if(providers[ip]){
+          providers[ip].removeEventListeners();
+        }
+        providers[ip] = new PresenceProvider();
+        providers[ip].addEventListener(PresenceProvider.EVT_UPDATE_PRESENCE, updatePresence);
 
-      if(providers[ip]){
-        providers[ip].removeEventListeners();
-      }
-      providers[ip] = new PresenceProvider();
-      providers[ip].addEventListener(PresenceProvider.EVT_UPDATE_PRESENCE, updatePresence);
+        utils.log(`Registered ${ip} as presence provider`);
+        res.setHeader("Content-Type", "application/json");
+        res.write(JSON.stringify(subjectsConfig));
+        resolve();
 
-      utils.log(`Registered ${ip} as presence provider`);
-      res.setHeader("Content-Type", "application/json");
-      res.write(JSON.stringify(subjectsConfig));
-      resolve();
+        });      
     });
   },
   update(req){
@@ -93,29 +98,31 @@ const handler = {
       });
     });
   },
-  status(res){
-    const result = Object.keys(subjects).reduce((acc, name) => {
-      acc[name] = {
-        present: subjects[name].present,
-        lastSeen: Object.keys(providers).reduce((acc, ip) => {
-          const lastSeen = providers[ip].lastSeen(name) ? new Date(providers[ip].lastSeen(name)) : null;
-          if(acc === null){
-            if(lastSeen === null){
-              return null;
+  status(req, res){
+    return checkAuth(req.headers.authorization, config.credentials[0], config.credentials[1]).then(() => {
+      const result = Object.keys(subjects).reduce((acc, name) => {
+        acc[name] = {
+          present: subjects[name].present,
+          lastSeen: Object.keys(providers).reduce((acc, ip) => {
+            const lastSeen = providers[ip].lastSeen(name) ? new Date(providers[ip].lastSeen(name)) : null;
+            if(acc === null){
+              if(lastSeen === null){
+                return null;
+              }
+              return {
+                time: lastSeen,
+                provider: ip
+              }
             }
-            return {
-              time: lastSeen,
-              provider: ip
-            }
-          }
-          return acc < lastSeen ? {time: lastSeen, provider: ip} : acc;
-        }, null)
-      }
-      return acc;
-    }, {});
-    res.setHeader("Content-Type", "application/json");
-    res.write(JSON.stringify(result));
-    return Promise.resolve(200);
+            return acc < lastSeen ? {time: lastSeen, provider: ip} : acc;
+          }, null)
+        }
+        return acc;
+      }, {});
+      res.setHeader("Content-Type", "application/json");
+      res.write(JSON.stringify(result));
+      return Promise.resolve(200);
+    });
   }
 }
 
@@ -221,7 +228,7 @@ srv.addListener("request", (req, res) => {
       prm = handler.update(req);
       break;
     case "/status":
-      prm = handler.status(res);
+      prm = handler.status(req, res);
       break;
     default:
       prm = Promise.reject(404);

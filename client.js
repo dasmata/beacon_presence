@@ -8,7 +8,7 @@ const scanner = new BeaconScanner({noble: noble});
 const COMMANDS_PRESENT = "arrived";
 const COMMANDS_DEPARTED = "departed";
 const defaults = {
-  "count": Number.MAX_VALUE,
+  "count": 0,
   "present": null
 };
 
