@@ -62,8 +62,12 @@ const handler = {
   register(req, res){
     const ip = req.connection.remoteAddress; 
     return new Promise((resolve, reject) => {
-      checkAuth(req.headers.authorization, config.credentials[0], config.credentials[1]).then(() => {
-       if(providers[ip]){
+      checkAuth(req.headers.authorization, config.credentials[0], config.credentials[1]).then((result) => {
+        if(!result){
+          reject(401);
+          return;
+        }
+        if(providers[ip]){
           providers[ip].removeEventListeners();
         }
         providers[ip] = new PresenceProvider();
@@ -73,8 +77,7 @@ const handler = {
         res.setHeader("Content-Type", "application/json");
         res.write(JSON.stringify(subjectsConfig));
         resolve();
-
-        });      
+      });      
     });
   },
   update(req){
@@ -99,7 +102,12 @@ const handler = {
     });
   },
   status(req, res){
-    return checkAuth(req.headers.authorization, config.credentials[0], config.credentials[1]).then(() => {
+    return checkAuth(req.headers.authorization, config.credentials[0], config.credentials[1]).then((authResult) => {
+      if(!authResult){
+          res.setHeader("WWW-Authenticate", "basic realm=status page");
+          reject(401);
+          return;
+      }
       const result = Object.keys(subjects).reduce((acc, name) => {
         acc[name] = {
           present: subjects[name].present,

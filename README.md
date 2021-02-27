@@ -11,7 +11,7 @@ The server and one client can both run on the same machine.
 * bluetooth enabled machine (tested on raspberry pi 3 and 4)
 * NodeJs 10.23+
 
-## Instalation
+## Installation
 Run the following commands in project root. For the setup command, you will need sudo rights. Root password might be required
 
 ```bash
@@ -48,7 +48,7 @@ The server's URL. The port is 3300. This represents only and example. Plaese pro
 }
 ```
 ### Server Config
-This file is used by the server in order to communicate with HE and validate the receivers credentials. 
+This file is used by the server in order to communicate with HE and validate the clients credentials. 
 #### Host
 represents teh URL for the HE. This represents only and example. Plaese provide your own values.
 
@@ -100,4 +100,34 @@ This will register a process in PM2 as root. Root prvileges are neede in order t
 ```bash
 sudo pm2 save
 ```
-
+## Server API
+### GET /register
+Used to register a new client. Responds with a 200 HTTP status code on success or a 401 HTTP status code on auth failure. The body of the response will contain the list of subjects and a time interval (in seconds) that must pass before a subject is considered departed.
+### GET /update
+Updates the state of a subject.
+#### params
+* subject [string] - the sujects whos status is updated
+* present [boolean | null] - the subjects status as follows:
+    ** `true` if the subject is present
+    ** `false` if the subject is departed
+    ** `null` if the subject was not seen at all from the start of the client. This translates in a "departed" status but the system traks it differently
+This method returns an empty body with the following HTTP status codes:
+* 400 for invalid parameters
+* 401 for an unregistered client provider
+* 200 on status update
+* 202 if the reuqest is valid but the subject's status allready is eaquat to the updated status
+### GET /status
+This url retus the current stats and the last seen date for all subjects. It requires a basic HTTP authentication with the same credentials that are used by de client providers.
+Returns the data formatted as json o success or a 401 http status code (with empty body) in case of auth failure.
+*Response Example*
+```json
+{
+  "subjectName": {
+    "present":true,
+    "lastSeen": {
+      "time":"2021-02-27T20:04:59.637Z",
+      "provider":"::ffff:192.168.1.3"
+    }
+  }
+}
+```
