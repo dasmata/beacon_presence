@@ -1,4 +1,4 @@
-# HUbitat BLE Beacon Senzor
+# HUbitat BLE Beacon Sensor
 Hubitat BLE Beacon senzor ie meant to be used as a BLE beacon receiver that updates a virtual presence device in Hubitat Elevantion if the beacon is present or departed.
 It can track multiple subjects each with mutiple beacons assigned and can aggregate multiple BLE recevers to update one single HE presence device.
 The application conssists of a server and a client.
