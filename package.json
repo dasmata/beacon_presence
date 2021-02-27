@@ -1,0 +1,36 @@
+{
+  "name": "he_beacon_presence",
+  "version": "1.0.0",
+  "description": "HE beacon presences searches for BLE beacons and updates presence devices on HE accordingly",
+  "main": "server.js",
+  "dependencies": {
+    "@abandonware/noble": "^1.9.2-11",
+    "node-beacon-scanner": "^0.2.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "setup": "npm i && sudo npm i -g pm2",
+    "start_server": "pm2 start server.js",
+    "start_client": "sudo pm2 start client.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dasmata/beacon_presence.git"
+  },
+  "keywords": [
+    "Hubitat",
+    "Elevantion",
+    "HE",
+    "BLE",
+    "beacon",
+    "iBeacon",
+    "bluetooth",
+    "presence"
+  ],
+  "author": "Tiberiu Popovici",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dasmata/beacon_presence/issues"
+  },
+  "homepage": "https://github.com/dasmata/beacon_presence#readme"
+}

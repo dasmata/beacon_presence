@@ -4,16 +4,17 @@ const fs = require("fs");
 const dns = require("dns");
 const subjectsConfig = require("./config/subjects.js");
 const config = require("./config/server_config.js");
+const utils = require("./utils.js");
 
 const providers = {};
 const LOG_SIZE = 30;
 const COMMANDS_PRESENT = "arrived";
 const COMMANDS_DEPARTED = "departed";
 
-const subjects = Object.keys(subjectsConfig).reduce((acc, name) => {
+const subjects = Object.keys(subjectsConfig.subjects).reduce((acc, name) => {
   acc[name] = {
-    ...subjectsConfig[name],
-    present: false
+    ...subjectsConfig.subjects[name],
+    present: null
   }
   return acc;
 }, {});
@@ -27,16 +28,22 @@ const srv = https.createServer(srvOptions, (req, res) => {
     res.setHeader("Content-Type", "application/json");
 });
 
+function callDevice(subject, newState){
+  const path = `${config.path}/${subjects[subject].deviceId}/${newState ? COMMANDS_PRESENT : COMMANDS_DEPARTED}?access_token=${config.ACCESS_TOKEN}`;
+  http.get(`${config.host}${path}`, (res) => {
+    utils.log(path.split("?")[0], ` - ${res.statusCode}`);
+  });
+}
+
 function updatePresence(data){
-  if(subjects[data.subject].present !== data.newState){
+  if(subjects[data.subject].present !== data.newState || data.newState === null){
     const newState = Object.keys(providers).reduce((acc, ip) => {
       return acc || providers[ip].isPresent(data.subject);
     }, false);
     if(newState !== subjects[data.subject].present){
-      const path = `${config.path}/${subjects[data.subject].deviceId}/${newState ? COMMANDS_PRESENT : COMMANDS_DEPARTED}?access_token=${config.ACCESS_TOKEN}`;
       subjects[data.subject].present = newState;
-      console.log(`Update presence for ${data.subject} to ${newState}`);
-      http.get(`${config.host}${path}`);
+      utils.log(`Update presence for ${data.subject} to ${newState}`);
+      callDevice(data.subject, newState);
     }
   }
 }
@@ -48,7 +55,7 @@ const handler = {
     return new Promise((resolve, reject) => {
       const userpass = Buffer.from((req.headers.authorization || '').split(' ')[1] || '', 'base64').toString();
       if (userpass !== config.credentials.join(":")) {
-        console.log("invalid registration");
+        utils.log("invalid registration");
         reject(401);
         return;
       }
@@ -59,7 +66,7 @@ const handler = {
       providers[ip] = new PresenceProvider();
       providers[ip].addEventListener(PresenceProvider.EVT_UPDATE_PRESENCE, updatePresence);
 
-      console.log(`Registered ${ip} as presence provider`);
+      utils.log(`Registered ${ip} as presence provider`);
       res.setHeader("Content-Type", "application/json");
       res.write(JSON.stringify(subjectsConfig));
       resolve();
@@ -91,7 +98,7 @@ const handler = {
       acc[name] = {
         present: subjects[name].present,
         lastSeen: Object.keys(providers).reduce((acc, ip) => {
-          const lastSeen = providers[ip].lastSeen(name);
+          const lastSeen = providers[ip].lastSeen(name) ? new Date(providers[ip].lastSeen(name)) : null;
           if(acc === null){
             if(lastSeen === null){
               return null;
@@ -122,13 +129,15 @@ class PresenceProvider {
 
   setPresence(subject, newPresence){
     const oldState = !!this.currentState[subject];
-    this.log.push({
-      time: new Date(),
-      value: newPresence,
-      subject: subject,
-    });
-    this.currentState[subject] = newPresence === "true";
-    this.logRotate();
+    if(newPresence !== "null"){
+      this.log.push({
+        time: new Date(),
+        value: newPresence,
+        subject: subject,
+      });
+      this.logRotate();
+    }
+    this.currentState[subject] = newPresence === "null" ? null : newPresence === "true";
     if(oldState !== this.currentState[subject]){
       this.dispatchEvent(this.constructor.EVT_UPDATE_PRESENCE, {
         provider: this,
@@ -185,7 +194,20 @@ class PresenceProvider {
 
 PresenceProvider.EVT_UPDATE_PRESENCE = "@@presenceProvider/update";
 
-
+/* device sync failover: sync everything every 5 minute
+setInterval(() => {
+  if(Object.keys(providers).length < 1){
+    utils.log("Cancel device sync: no provders registered.")
+    return;
+  }
+  Object.keys(subjects).forEach((subject) => {
+    if(subjects[subject].present !== null){
+      utils.log(`sync device for ${subject}: ${subjects[subject].present}`)
+      callDevice(subject, subjects[subject].present);
+    }
+  });
+}, 300000)
+*/
 
 
 srv.addListener("request", (req, res) => {
@@ -210,13 +232,13 @@ srv.addListener("request", (req, res) => {
     }
     res.end();
   }).catch((code) => {
-    console.log(code);
+    utils.log(code);
     res.writeHead(typeof code === "number" ? code : 500);
     res.end();
   });
 })
 
 srv.listen(3300, () => {
-    console.log("Listening on 3300.")
+    utils.log("Listening on 3300.")
 })
 
