@@ -52,19 +52,6 @@ scanner.onadvertisement = (ad) => {
   })
 };
 
-
-setInterval(() => {
-  names.forEach((name) => {
-    if(registeredBeacons[name].count <= PRESENCE_COUNT){
-      registeredBeacons[name].count++;
-    } else if(registeredBeacons[name].present || registeredBeacons[name].present === null){
-      updatePresence(name, registeredBeacons[name].present === null ? null : false)
-        .catch(() => {});
-      registeredBeacons[name].present = false;
-    }
-  });
-}, 1000);
-
 const register = () => {
   return new Promise((resolve, reject) => {
     utils.log("registering to agregator");
@@ -97,13 +84,27 @@ const register = () => {
 };
 
 const startScan = () => {
+  /**
+   * Sometimes, on reboot bluetooth interface cannot start. 
+   * @TODO send notification about bluetooth interface not starting
+   */
+  let blActive = false;
+  setTimeout(() => {
+    if(!blActive){
+      stopScan();
+      utils.log("BL scan could not start. Rebooting");
+      require('child_process').exec('sudo /sbin/shutdown -r now', function (msg) { utils.log(msg) });
+    }
+  }, 1500)
   return new Promise((resolve, reject) => {
     // Start scanning
     scanner.startScan().then(() => {
       utils.log('Started to scan.');
+      intervalManager.startInterval();
+      blActive = true;
       resolve();
     }).catch((error) => {
-      console.error(new Date(), error);
+      utils.error(new Date(), error);
       reject();
     });
   });
@@ -122,11 +123,35 @@ const registerBeacons = (subjects) => {
 
 const stopScan = () => {
   return new Promise((resolve, reject) => {
-    // Start scanning
+    // Stop scanning
     scanner.stopScan();
+    intervalManager.stopInterval();
     utils.log('Scan stopped.');
     resolve();
   });
+}
+
+const intervalManager = {
+  interval: null,
+  startInterval: function(){
+    utils.log("Start interval");
+    this.interval = setInterval(() => {
+      names.forEach((name) => {
+        if(registeredBeacons[name].count <= PRESENCE_COUNT){
+          registeredBeacons[name].count++;
+        } else if(registeredBeacons[name].present || registeredBeacons[name].present === null){
+          updatePresence(name, registeredBeacons[name].present === null ? null : false)
+            .catch(() => {});
+          registeredBeacons[name].present = false;
+        }
+      });
+    }, 1000);
+
+  },
+  stopInterval: function(){
+    utils.log("Clear interval");
+    clearInterval(this.interval);
+  }
 }
 
 const init = () => {
