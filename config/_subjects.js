@@ -1,6 +1,9 @@
 const subjects = {
   "subject1": { // subject's name
-    "uuid": ["beaconId1", "beaconId2"], // a list of this subject's beacon ids
+    "eidSettings": {
+      "identityKey": "00112233445566778899aabbcc", // identity key used by the eddystone-eid beacon
+      "rotationPeriod": 32 // time (in seconds) for the eid rotation
+    },
     "deviceId": 1 // HE Virtual Presence device id
   }
 }

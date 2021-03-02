@@ -1,8 +1,9 @@
-const BeaconScanner = require('node-beacon-scanner');
+const BeaconScanner = require('./node-beacon-scanner/lib/scanner.js');
 const noble = require('@abandonware/noble');
 const http = require('https');
 const options = require("./config/client_config.js");
 const utils = require("./utils.js");
+const generateEid = require("./ephemeralId").generateEid;
 
 const scanner = new BeaconScanner({noble: noble});
 const COMMANDS_PRESENT = "arrived";
@@ -14,9 +15,12 @@ const defaults = {
 
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 
+let tmp = [];
+
 let registeredBeacons = {};
 let names = [];
 let PRESENCE_COUNT = 0;
+
 function updatePresence(name, present){
   const path = `/update?present=${present}&subject=${name}`;
   utils.log(`updating state for ${name} to ${present}`);
@@ -39,9 +43,18 @@ function updatePresence(name, present){
 
 // Set an Event handler for becons
 scanner.onadvertisement = (ad) => {
+  if(ad.beaconType !== 'eddystoneEid'){
+    return;
+  }
+  
   //const distance = Math.pow(10,( (ad.iBeacon.txPower - ad.rssi) / (10 * 2)));
   names.forEach((name) => {
-    if(registeredBeacons[name].uuid.indexOf(ad.iBeacon.uuid) !== -1){
+    const localEid = generateEid(
+      registeredBeacons[name].identityKey,
+      registeredBeacons[name].rotationPeriod
+    );
+
+    if(ad.eddystoneEid.eid === localEid){
       if(!registeredBeacons[name].present){
         updatePresence(name, true).then(() => {
           registeredBeacons[name].present = true;
@@ -112,13 +125,14 @@ const startScan = () => {
 
 const registerBeacons = (subjects) => {
   registeredBeacons = Object.keys(subjects).reduce((acc, subject) => {
+    names.push(subject);
     acc[subject] = {
-      ...subjects[subject],
+      subject,
+      ...subjects[subject].eidSettings,
       ...defaults
     };
     return acc;
   },{})
-  names = Object.keys(registeredBeacons);
 }
 
 const stopScan = () => {

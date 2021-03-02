@@ -1,8 +1,8 @@
-# HUbitat BLE Beacon Sensor
-Hubitat BLE Beacon senzor ie meant to be used as a BLE beacon receiver that updates a virtual presence device in Hubitat Elevantion if the beacon is present or departed.
-It can track multiple subjects each with mutiple beacons assigned and can aggregate multiple BLE recevers to update one single HE presence device.
-The application conssists of a server and a client.
-*server* - acts as an agregator for all the client BLE rceivers. You only need one server for a whole network a clients. The server is the component that updates HE presence devices via Maker API si you ust register those devices in Maker API
+# Hubitat Eddystone-EID Beacon Sensor
+Hubitat Eddystone-EID Beacon senzor is meant to be used as a Eddystone-EID beacon receiver that updates a virtual presence device in Hubitat Elevantion if the beacon is present or departed.
+It can track multiple subjects and can aggregate multiple receivers to update one single HE presence device.
+The application consists of a server and a client.
+*server* - acts as an agregator for all the client Eddystone-EID rceivers. You only need one server for a whole network a clients. The server is the component that updates HE presence devices via Maker API. NOTE: you must register those devices in Maker API
 *client* - Uses the bluetooth device to track the beacons. In order for it to do so, it needs sudo permissions. You can have multiple clients, all running on different machines, in order to get full coverage of your house. All the clients will be reporting back to the server so they must be able to communicate to the server app.
 The server and one client can both run on the same machine.
 
@@ -132,4 +132,6 @@ Returns the data formatted as json o success or a 401 http status code (with emp
 }
 ```
 ## Security concerns
-This app is nor recommended for arming/disarming HSM or for locking/unlocking locks because it relies on BLE beacons. Any smart phone can simulate most types of BLE beacons and send any beacon UUID. Your beacon UUID is public. It is brodcasted unencrypted for everyone to use. Anyone has acces to it and can create his own beacon with the same UUID and thus impersonate you. Please use this app only for non critical and non security related use cases.
+BLE Beacon technologies are generally known to be a security hazard because here is no encryption and the broadcaseted message is public. Eddystone-EID broadcasts an encrypted rotating identifier in order to increase the security of the protocol, but otherwise acts similarly to the UID frame. That means that messages transmitted by and Eddystone-EID beacon change over time and are necrypted using an algorithm based on a shared secred (AES-128-ECB) thus making this type of beacon suitable for use cases where security is a mjor concern: unlocking door locks, arming/disarming security monitors... etc.
+Besides message encryption, Eddystone-EID protocol ensures the identity of both beacons and receiver via a registration service. Right now, Hubitat Eddystone-EID Beacon Sensor *DOES NOT* implement the part of the protocol that ensures the identity and I have no intent of doing so because I don't see it as a major risk. If you have the time to do so, please create a pull request.
+

@@ -4,10 +4,13 @@
   "description": "HE beacon presences searches for BLE beacons and updates presence devices on HE accordingly",
   "main": "server.js",
   "dependencies": {
+    "@abandonware/bluetooth-hci-socket": "^0.5.3-7",
     "@abandonware/noble": "^1.9.2-11",
-    "node-beacon-scanner": "^0.2.2"
+    "eddystone-beacon-scanner": "^3.0.0",
+    "node-beacon-scanner": "^0.2.2",
+    "node-pre-gyp": "^0.17.0",
+    "rebuild": "^0.1.2"
   },
-  "devDependencies": {},
   "scripts": {
     "setup": "npm i && sudo npm i -g pm2",
     "start_server": "pm2 start server.js",
