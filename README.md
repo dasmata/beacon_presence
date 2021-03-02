@@ -1,8 +1,8 @@
 # Hubitat Eddystone-EID Beacon Sensor
-Hubitat Eddystone-EID Beacon senzor is meant to be used as a Eddystone-EID beacon receiver that updates a virtual presence device in Hubitat Elevantion if the beacon is present or departed.
+Hubitat Eddystone-EID Beacon sensor is meant to be used as a Eddystone-EID beacon receiver that updates a virtual presence device in Hubitat Elevantion if the beacon is present or departed.
 It can track multiple subjects and can aggregate multiple receivers to update one single HE presence device.
 The application consists of a server and a client.
-*server* - acts as an agregator for all the client Eddystone-EID rceivers. You only need one server for a whole network a clients. The server is the component that updates HE presence devices via Maker API. NOTE: you must register those devices in Maker API
+*server* - acts as an agregator for all the client Eddystone-EID receivers. You only need one server for a whole network of clients. The server is the component that updates HE presence devices via Maker API. NOTE: you must register those devices in Maker API
 *client* - Uses the bluetooth device to track the beacons. In order for it to do so, it needs sudo permissions. You can have multiple clients, all running on different machines, in order to get full coverage of your house. All the clients will be reporting back to the server so they must be able to communicate to the server app.
 The server and one client can both run on the same machine.
 
@@ -31,16 +31,16 @@ Now you need to edit all the config files and add your data. PLease see the conf
 For security reasons, the server runs on HTTPS so it needs a self-signed certificate. You cand get one by following these steps: https://flaviocopes.com/express-https-self-signed-certificate/ . Name your files crtFile.crt and keyFile.key and place them in the cert folder.
 
 ### Client Config
-This file is used by the BLE recever in order to register with the server and also report the beacons states.
+This file is used by the recever in order to register with the server and also report the beacons states.
 #### Credentials
-The username and password required by the server to register clients. This represents only and example. Plaese provide your own values.
+The username and password required by the server to register clients. This represents only an example. Please provide your own values.
 ```json
 {
-  "credentials": ["ussername", "password"]
+  "credentials": ["username", "password"]
 }
 ```
 #### Host
-The server's URL. The port is 3300. This represents only and example. Plaese provide your own values.
+The server's URL. The port is 3300. This represents only an example. Please provide your own values.
 
 ```json
 {
@@ -50,7 +50,7 @@ The server's URL. The port is 3300. This represents only and example. Plaese pro
 ### Server Config
 This file is used by the server in order to communicate with HE and validate the clients credentials. 
 #### Host
-represents teh URL for the HE. This represents only and example. Plaese provide your own values.
+represents the URL for the HE. This is only an example. Please provide your own values.
 
 ```json
 {
@@ -58,7 +58,7 @@ represents teh URL for the HE. This represents only and example. Plaese provide 
 }
 ```
 #### path
-Represents the path exposed by the Maker API App. This represents only and example. Plaese provide your own values.
+Represents the path exposed by the Maker API App. This is only an example. Please provide your own values.
 
 ```json
 {
@@ -66,14 +66,14 @@ Represents the path exposed by the Maker API App. This represents only and examp
 }
 ```
 #### ACCESS_TOKEN
-Represents the acces tken provided by the Maker API app. When you regenerate the token in the Makes API, you must also updated it in this config. This represents only and example. Plaese provide your own values.
+Represents the acces token provided by the Maker API app. When you regenerate the token in the Makes API, you must also updated it in this config. This represents only an example. Please provide your own values.
 ```json
 {
   "ACCESS_TOKEN": "e79db7ad-d3e0-4f97-b672-b6423e57A295"
 }
 ```
 #### credentials
-Credentials usd to authenticate BLE clients. They must match the credentials in the client_config file.  This represents only and example. Plaese provide your own values.
+Credentials used to authenticate BLE clients. They must match the credentials in the client_config file.  This represents only and example. Please provide your own values.
 ```json
 {
   "credentials": ["ussername", "password"]
@@ -92,11 +92,11 @@ pm2 save
 ```
 
 ### client
-In order to start the server you will need to run the following command.
+In order to start the client you will need to run the following command.
 ```bash
 npm run start_client
 ```
-This will register a process in PM2 as root. Root prvileges are neede in order to use the bluetoth device. In order for the server to run at startup you need to run
+This will register a process in PM2 as root. Root prvileges are needed in order to use the bluetoth device. In order for the server to run at startup you need to run
 ```bash
 sudo pm2 save
 ```
@@ -132,6 +132,6 @@ Returns the data formatted as json o success or a 401 http status code (with emp
 }
 ```
 ## Security concerns
-BLE Beacon technologies are generally known to be a security hazard because here is no encryption and the broadcaseted message is public. Eddystone-EID broadcasts an encrypted rotating identifier in order to increase the security of the protocol, but otherwise acts similarly to the UID frame. That means that messages transmitted by and Eddystone-EID beacon change over time and are necrypted using an algorithm based on a shared secred (AES-128-ECB) thus making this type of beacon suitable for use cases where security is a mjor concern: unlocking door locks, arming/disarming security monitors... etc.
-Besides message encryption, Eddystone-EID protocol ensures the identity of both beacons and receiver via a registration service. Right now, Hubitat Eddystone-EID Beacon Sensor *DOES NOT* implement the part of the protocol that ensures the identity and I have no intent of doing so because I don't see it as a major risk. If you have the time to do so, please create a pull request.
+BLE Beacon technologies are generally known to be a security hazard because there is no encryption and the broadcaseted message is public. Eddystone-EID broadcasts an encrypted rotating identifier in order to increase the security of the protocol, but otherwise acts similarly to the UID frame. That means that messages transmitted by and Eddystone-EID beacon change over time and are encrypted using an algorithm based on a shared secred (AES-128-ECB) thus making this type of beacon suitable for use cases where security is a major concern: unlocking door locks, arming/disarming security monitors... etc.
+Besides message encryption, Eddystone-EID protocol ensures the identity of both beacons and receiver via a registration service. Right now, Hubitat Eddystone-EID Beacon Sensor *DOES NOT* implement the part of the protocol that ensures the identity and I have no intent of implementing it because I don't see it as a major risk. If you have the time to do so, please create a pull request.
 
