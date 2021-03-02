@@ -2,8 +2,8 @@
 Hubitat Eddystone-EID Beacon sensor is meant to be used as a Eddystone-EID beacon receiver that updates a virtual presence device in Hubitat Elevantion if the beacon is present or departed.
 It can track multiple subjects and can aggregate multiple receivers to update one single HE presence device.
 The application consists of a server and a client.
-*server* - acts as an agregator for all the client Eddystone-EID receivers. You only need one server for a whole network of clients. The server is the component that updates HE presence devices via Maker API. NOTE: you must register those devices in Maker API
-*client* - Uses the bluetooth device to track the beacons. In order for it to do so, it needs sudo permissions. You can have multiple clients, all running on different machines, in order to get full coverage of your house. All the clients will be reporting back to the server so they must be able to communicate to the server app.
+* *server* - acts as an agregator for all the client Eddystone-EID receivers. You only need one server for a whole network of clients. The server is the component that updates HE presence devices via Maker API. NOTE: you must register those devices in Maker API
+* *client* - Uses the bluetooth device to track the beacons. In order for it to do so, it needs sudo permissions. You can have multiple clients, all running on different machines, in order to get full coverage of your house. All the clients will be reporting back to the server so they must be able to communicate to the server app.
 The server and one client can both run on the same machine.
 
 
@@ -133,5 +133,5 @@ Returns the data formatted as json o success or a 401 http status code (with emp
 ```
 ## Security concerns
 BLE Beacon technologies are generally known to be a security hazard because there is no encryption and the broadcaseted message is public. Eddystone-EID broadcasts an encrypted rotating identifier in order to increase the security of the protocol, but otherwise acts similarly to the UID frame. That means that messages transmitted by and Eddystone-EID beacon change over time and are encrypted using an algorithm based on a shared secred (AES-128-ECB) thus making this type of beacon suitable for use cases where security is a major concern: unlocking door locks, arming/disarming security monitors... etc.
-Besides message encryption, Eddystone-EID protocol ensures the identity of both beacons and receiver via a registration service. Right now, Hubitat Eddystone-EID Beacon Sensor *DOES NOT* implement the part of the protocol that ensures the identity and I have no intent of implementing it because I don't see it as a major risk. If you have the time to do so, please create a pull request.
+Besides message encryption, Eddystone-EID protocol ensures the identity of both beacons and receiver via a registration service. Right now, Hubitat Eddystone-EID Beacon Sensor **DOES NOT** implement the part of the protocol that ensures the identity and I have no intent of implementing it because I don't see it as a major risk. If you have the time to do so, please create a pull request.
 
