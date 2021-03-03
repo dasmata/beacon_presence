@@ -136,5 +136,6 @@ BLE Beacon technologies are generally known to be a security hazard because ther
 
 Besides message encryption, Eddystone-EID protocol ensures the identity of both beacons and receiver via a registration service. Right now, Hubitat Eddystone-EID Beacon Sensor **DOES NOT** implement the part of the protocol that ensures the identity and I have no intent of implementing it because I don't see it as a major risk. If you have the time to do so, please create a pull request.
 
-** Special thanks to Futomi Hatano (https://github.com/futomi) for his node-beacon-scanner package that I had to include in the project sources because my Eddystone-EID beacon simmulator sends out frames of 14 bits instead of 10 so I had to remove a validation from his code. **
+---
+**Special thanks** to Futomi Hatano (https://github.com/futomi) for his node-beacon-scanner package that I had to include in the project sources because my Eddystone-EID beacon simmulator sends out frames of 14 bits instead of 10 so I had to remove a validation from his code.
 
