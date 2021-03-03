@@ -110,9 +110,9 @@ Updates the state of a subject.
 #### params
 * subject [string] - the sujects whos status is updated
 * present [boolean | null] - the subjects status as follows:
-    ** `true` if the subject is present
-    ** `false` if the subject is departed
-    ** `null` if the subject was not seen at all from the start of the client. This translates in a "departed" status but the system traks it differently
+    * `true` if the subject is present
+    * `false` if the subject is departed
+    * `null` if the subject was not seen at all from the start of the client. This translates in a "departed" status but the system traks it differently
 This method returns an empty body with the following HTTP status codes:
 * 400 for invalid parameters
 * 401 for an unregistered client provider
