@@ -1,3 +1,5 @@
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/dasmata/beacon_presence/StrapDown.js/graphs/commit-activity)
+
 # Hubitat Eddystone-EID Beacon Sensor
 Hubitat Eddystone-EID Beacon sensor is meant to be used as a Eddystone-EID beacon receiver that updates a virtual presence device in Hubitat Elevantion if the beacon is present or departed.
 It can track multiple subjects and can aggregate multiple receivers to update one single HE presence device.
